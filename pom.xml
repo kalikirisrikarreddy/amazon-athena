@@ -45,7 +45,8 @@
 	      <configuration>
 	        <archive>
 	          <manifest>
-	            <mainClass>amazon.athena.DataProducer</mainClass>
+	            <!-- <mainClass>amazon.athena.CsvDataProducer</mainClass> -->
+	            <mainClass>amazon.athena.JsonDataProducer</mainClass>
 	          </manifest>
 	        </archive>
 	        <descriptorRefs>

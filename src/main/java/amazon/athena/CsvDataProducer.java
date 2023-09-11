@@ -32,7 +32,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-public class DataProducer {
+public class CsvDataProducer {
 
 	private static final int NO_OF_RECS_PER_FILE = Integer.parseInt(System.getenv("NO_OF_RECS_PER_FILE"));
 	private static final int FROM_YEAR = Integer.parseInt(System.getenv("FROM_YEAR"));
