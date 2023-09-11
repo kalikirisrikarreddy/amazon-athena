@@ -2,7 +2,7 @@ package amazon.athena;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-@JsonPropertyOrder({ "id", "firstname", "lastname", "company", "paddress", "saddress" })
+@JsonPropertyOrder({ "id", "firstname", "lastname", "company", "paddress", "facttheylike" })
 public class Employee {
 
 	private String id;
@@ -10,11 +10,7 @@ public class Employee {
 	private String lastname;
 	private String company;
 	private String paddress;
-	private String saddress;
-
-	public Employee() {
-		super();
-	}
+	private String facttheylike;
 
 	public String getId() {
 		return id;
@@ -56,22 +52,25 @@ public class Employee {
 		this.paddress = paddress;
 	}
 
-	public String getSaddress() {
-		return saddress;
+	public String getFacttheylike() {
+		return facttheylike;
 	}
 
-	public void setSaddress(String saddress) {
-		this.saddress = saddress;
+	public void setFacttheylike(String facttheylike) {
+		this.facttheylike = facttheylike;
 	}
 
-	public Employee(String id, String firstname, String lastname, String company, String paddress, String saddress) {
+	public Employee() {
 		super();
+	}
+
+	public Employee(String id, String firstname, String lastname, String company, String paddress,
+			String facttheylike) {
 		this.id = id;
 		this.firstname = firstname;
 		this.lastname = lastname;
 		this.company = company;
 		this.paddress = paddress;
-		this.saddress = saddress;
+		this.facttheylike = facttheylike;
 	}
-
 }
