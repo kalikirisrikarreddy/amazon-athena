@@ -1,7 +1,5 @@
 package amazon.athena;
 
-import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
-import com.github.javafaker.ChuckNorris;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,7 +12,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +21,7 @@ import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.github.javafaker.Address;
+import com.github.javafaker.ChuckNorris;
 import com.github.javafaker.Company;
 import com.github.javafaker.Faker;
 import com.github.javafaker.Name;
@@ -44,9 +42,9 @@ public class JsonDataProducer {
 	private static final int FROM_YEAR = Integer.parseInt(System.getenv("FROM_YEAR"));
 	private static final int TO_YEAR = Integer.parseInt(System.getenv("TO_YEAR"));
 	private static final String THOUSAND_ASTERISKS = "***************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************";
-	private static final List<Employee> EMPLOYEES = new ArrayList<Employee>(5);
+	private static final List<Employee> EMPLOYEES = new ArrayList<Employee>(NO_OF_RECS_PER_FILE);
 	private static final String HYPHEN = "-";
-	private static final ObjectWriter OBJECT_WRITER = new ObjectMapper().writerFor(List.class);
+	private static final ObjectWriter OBJECT_WRITER = new ObjectMapper().writerFor(Employee.class);
 
 	static S3Client s3Client = S3Client.builder().region(Region.US_EAST_1)
 			.credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(null, null)))
@@ -94,18 +92,18 @@ public class JsonDataProducer {
 		try (FileOutputStream fos = new FileOutputStream(file);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);
 				GZIPOutputStream gos = new GZIPOutputStream(bos);) {
-				EMPLOYEES.forEach(employee -> {
-					try {
-						gos.write(new ObjectMapper().writeValueAsBytes(employee));
-						gos.write("\n".getBytes(StandardCharsets.UTF_8));
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				});
+			EMPLOYEES.forEach(employee -> {
+				try {
+					gos.write(OBJECT_WRITER.writeValueAsBytes(employee));
+					gos.write("\n".getBytes(StandardCharsets.UTF_8));
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		String s3Key = "birthday=" + LocalDate.of(y, m, day).format(DateTimeFormatter.ISO_LOCAL_DATE) + "/data.json.gz";
+		String s3Key = "year=" + y + "/month=" + m + "/day=" + day + "/data.json.gz";
 		s3Client.putObject(PutObjectRequest.builder().bucket("athena-datasets-1").key(s3Key).build(),
 				RequestBody.fromFile(file));
 		file.delete();
