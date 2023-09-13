@@ -20,6 +20,8 @@ import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.github.javafaker.Address;
 import com.github.javafaker.ChuckNorris;
 import com.github.javafaker.Company;
@@ -36,7 +38,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-public class JsonDataProducer {
+public class MultiFormatDataProducer {
 
 	private static final int NO_OF_RECS_PER_FILE = Integer.parseInt(System.getenv("NO_OF_RECS_PER_FILE"));
 	private static final int FROM_YEAR = Integer.parseInt(System.getenv("FROM_YEAR"));
@@ -71,13 +73,14 @@ public class JsonDataProducer {
 				final int m = month;
 				int numberOfDaysInThisMonth = YearMonth.of(y, m).lengthOfMonth();
 				for (int day = 1; day <= numberOfDaysInThisMonth; day++) {
-					generateFileForADay(y, m, day);
+					generateJsonFileForADay(y, m, day);
+					generateCsvFileForADay(y, m, day);
 				}
 			}
 		}
 	}
 
-	private static void generateFileForADay(final int y, final int m, int day) {
+	private static void generateJsonFileForADay(final int y, final int m, int day) {
 		String variableSuffix = String.valueOf(y) + String.valueOf(m) + String.valueOf(day);
 		for (int recordIndex = 0; recordIndex < 5; recordIndex++) {
 			Employee employee = EMPLOYEES.get(recordIndex);
@@ -105,6 +108,34 @@ public class JsonDataProducer {
 		}
 		String s3Key = "year=" + y + "/month=" + m + "/day=" + day + "/data.json.gz";
 		s3Client.putObject(PutObjectRequest.builder().bucket("athena-datasets-1").key(s3Key).build(),
+				RequestBody.fromFile(file));
+		file.delete();
+	}
+
+	private static void generateCsvFileForADay(final int y, final int m, int day) {
+		String variableSuffix = String.valueOf(y) + String.valueOf(m) + String.valueOf(day);
+		for (int recordIndex = 0; recordIndex < 5; recordIndex++) {
+			Employee employee = EMPLOYEES.get(recordIndex);
+			employee.setId(UUID.randomUUID().toString());
+			employee.setFirstname(
+					StringUtils.substringBefore(employee.getFirstname(), HYPHEN) + HYPHEN + variableSuffix);
+			employee.setLastname(StringUtils.substringBefore(employee.getLastname(), HYPHEN) + HYPHEN + variableSuffix);
+		}
+
+		CsvSchema csvSchema = CsvSchema.builder().setUseHeader(false).addColumn("id").addColumn("firstname")
+				.addColumn("lastname").addColumn("company").addColumn("paddress").addColumn("facttheylike").build();
+		CsvMapper csvMapper = new CsvMapper();
+		File file = new File("f" + LocalDate.of(y, m, day).format(DateTimeFormatter.BASIC_ISO_DATE) + ".csv.gz");
+
+		try (FileOutputStream fos = new FileOutputStream(file);
+				BufferedOutputStream bos = new BufferedOutputStream(fos);
+				GZIPOutputStream gos = new GZIPOutputStream(bos);) {
+			csvMapper.writerFor(List.class).with(csvSchema).writeValue(gos, EMPLOYEES);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		String s3Key = "year=" + y + "/month=" + m + "/day=" + day + "/data.csv.gz";
+		s3Client.putObject(PutObjectRequest.builder().bucket("athena-datasets-2").key(s3Key).build(),
 				RequestBody.fromFile(file));
 		file.delete();
 	}
