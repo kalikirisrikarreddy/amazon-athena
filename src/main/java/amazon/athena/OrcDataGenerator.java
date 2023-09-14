@@ -1,5 +1,7 @@
 package amazon.athena;
 
+import com.github.javafaker.Faker;
+import com.github.javafaker.Name;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -43,14 +45,16 @@ public class OrcDataGenerator {
     BytesColumnVector paddressBCV = (BytesColumnVector) vectorizedRowBatch.cols[4];
     BytesColumnVector facttheylikeBCV = (BytesColumnVector) vectorizedRowBatch.cols[5];
 
+    Faker faker = new Faker();
     for (int i = 0; i < 10000; i++) {
       vectorizedRowBatch.size++;
+      Name name = faker.name();
       idBCV.setVal(i, UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
-      firstNameBCV.setVal(i, UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
-      lastNameBCV.setVal(i, UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
-      companyBCV.setVal(i, UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
-      paddressBCV.setVal(i, UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
-      facttheylikeBCV.setVal(i, UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
+      firstNameBCV.setVal(i, name.firstName().getBytes(StandardCharsets.UTF_8));
+      lastNameBCV.setVal(i, name.lastName().getBytes(StandardCharsets.UTF_8));
+      companyBCV.setVal(i, faker.company().name().getBytes(StandardCharsets.UTF_8));
+      paddressBCV.setVal(i, faker.address().fullAddress().getBytes(StandardCharsets.UTF_8));
+      facttheylikeBCV.setVal(i, faker.chuckNorris().fact().getBytes(StandardCharsets.UTF_8));
     }
 
     writer.addRowBatch(vectorizedRowBatch);
